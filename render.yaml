@@ -2,60 +2,33 @@ services:
   - type: web
     name: notebook-runner-api
     env: docker
-    plan: free
-    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
-    dockerfilePath: ./Dockerfile.api
-    autoDeploy: true
+    plan: starter  # or pro if you need more
+    dockerfilePath: ./Dockerfile
     envVars:
-      - key: ENV
-        value: production
-      - key: PORT
-        value: 10000
-      - key: DATABASE_URL
-        sync: false
       - key: REDIS_URL
-        sync: false
-      - key: S3_ENDPOINT_URL
-        sync: false
-      - key: S3_REGION
-        value: us-east-1
-      - key: S3_BUCKET
-        sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: SLACK_WEBHOOK_URL
-        sync: false
-      - key: API_KEY
-        sync: false
+        fromService:
+          type: redis
+          name: notebook-runner-redis
+          property: connectionString
+      - key: DATABASE_URL
+        sync: false  # leave blank for now
 
   - type: worker
     name: notebook-runner-worker
     env: docker
-    plan: free
-    dockerfilePath: ./Dockerfile.worker
-    dockerCommand: celery -A app.worker.celery_app worker --loglevel=INFO
-    autoDeploy: true
+    plan: starter  # must be pro if starter won’t allow worker
+    dockerfilePath: ./Dockerfile
+    startCommand: celery -A app.worker worker --loglevel=info
     envVars:
-      - key: ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
       - key: REDIS_URL
-        sync: false
-      - key: S3_ENDPOINT_URL
-        sync: false
-      - key: S3_REGION
-        value: us-east-1
-      - key: S3_BUCKET
-        sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: SLACK_WEBHOOK_URL
-        sync: false
-      - key: API_KEY
-        sync: false
-    
+        fromService:
+          type: redis
+          name: notebook-runner-redis
+          property: connectionString
+      - key: DATABASE_URL
+        sync: false  # leave blank for now
+
+databases:
+  - name: notebook-runner-redis
+    plan: free
+    ipAllowList: []  # allow internal access
